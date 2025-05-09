@@ -3,9 +3,13 @@ document.getElementById('loginBtn').addEventListener('click', login);
 document.getElementById('submitRegBtn').addEventListener('click', register);
 document.getElementById('registerBtn').addEventListener('click', showRegisterForm);
 document.getElementById('backToLoginBtn').addEventListener('click', showLoginForm);
-document.getElementById('addJobBtn').addEventListener('click', addJob);
-document.getElementById('loggoutBtn').addEventListener('click', logout);
+document.getElementById('jobForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    addJob();
+});
+document.getElementById('logoutBtn').addEventListener('click', logout);
 document.getElementById('updateStatusBtn').addEventListener('click', updateJobStatus);
+document.getElementById('closeModalBtn').addEventListener('click', closeModal);
 window.addEventListener('click', closeModalOnOutsideClick);
 
 // Utility Functions
@@ -62,6 +66,7 @@ function register() {
 
 // Job Tracker Functions
 function showJobTracker() {
+    document.getElementById('userNameDisplay').textContent = localStorage.getItem('currentUser');
     toggleDisplay('auth', 'none');
     toggleDisplay('register', 'none');
     toggleDisplay('jobTracker', 'block');
@@ -125,8 +130,19 @@ function loadJobs() {
 }
 
 function showUpdateStatusModal(index) {
-    toggleDisplay('updateStatusModal', 'block');
+    const modal = document.getElementById('updateStatus');
+    toggleDisplay('updateStatus', 'block');
+    
+    // Store the index on the update button for later use
     document.getElementById('updateStatusBtn').dataset.index = index;
+    
+    // Pre-select the current status if needed
+    const currentUser = localStorage.getItem('currentUser');
+    const users = getLocalStorageData('users');
+    if (currentUser && users[currentUser]) {
+        const currentStatus = users[currentUser].jobs[index].jobStatus;
+        document.getElementById('newStatus').value = currentStatus;
+    }
 }
 
 function updateJobStatus() {
@@ -144,11 +160,11 @@ function updateJobStatus() {
 }
 
 function closeModal() {
-    toggleDisplay('updateStatusModal', 'none');
+    toggleDisplay('updateStatus', 'none');
 }
 
 function closeModalOnOutsideClick(event) {
-    const modal = document.getElementById('updateStatusModal');
+    const modal = document.getElementById('updateStatus');
     if (event.target === modal) {
         closeModal();
     }
@@ -159,9 +175,11 @@ function deleteJob(index) {
     const users = getLocalStorageData('users');
 
     if (currentUser && users[currentUser]) {
-        users[currentUser].jobs.splice(index, 1);
-        setLocalStorageData('users', users);
-        loadJobs();
+        if (confirm('Are you sure you want to delete this job application?')) {
+            users[currentUser].jobs.splice(index, 1);
+            setLocalStorageData('users', users);
+            loadJobs();
+        }
     }
 }
 
@@ -174,5 +192,9 @@ function logout() {
 // Initialize
 if (localStorage.getItem('currentUser')) {
     showJobTracker();
+} else {
+    // Initialize users object if it doesn't exist
+    if (!localStorage.getItem('users')) {
+        setLocalStorageData('users', {});
+    }
 }
-
