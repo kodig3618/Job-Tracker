@@ -10,6 +10,8 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
 document.getElementById('logoutBtn').addEventListener('click', logout);
 document.getElementById('updateStatusBtn').addEventListener('click', updateJobStatus);
 document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+document.getElementById('saveEditBtn')?.addEventListener('click', saveEditedJob);
+document.getElementById('closeEditModalBtn')?.addEventListener('click', closeEditModal);
 window.addEventListener('click', closeModalOnOutsideClick);
 
 // Utility Functions
@@ -113,8 +115,11 @@ function loadJobs() {
                 <p>Application Date: ${job.applicationDate}</p>
                 <p>Status: ${job.jobStatus}</p>
                 <p>Notes: ${job.jobNotes}</p>
-                <button class="update-status-btn" data-index="${index}">Update Status</button>
-                <button class="delete-job-btn" data-index="${index}">Delete</button>
+                <div class="job-buttons">
+                    <button class="edit-job-btn" data-index="${index}">Edit</button>
+                    <button class="update-status-btn" data-index="${index}">Update Status</button>
+                    <button class="delete-job-btn" data-index="${index}">Delete</button>
+                </div>
             `;
             jobList.appendChild(jobItem);
         });
@@ -125,6 +130,9 @@ function loadJobs() {
         });
         document.querySelectorAll('.delete-job-btn').forEach(button => {
             button.addEventListener('click', () => deleteJob(button.dataset.index));
+        });
+        document.querySelectorAll('.edit-job-btn').forEach(button => {
+            button.addEventListener('click', () => showEditJobModal(button.dataset.index));
         });
     }
 }
@@ -165,8 +173,12 @@ function closeModal() {
 
 function closeModalOnOutsideClick(event) {
     const modal = document.getElementById('updateStatus');
+    const editModal = document.getElementById('editJobModal');
     if (event.target === modal) {
         closeModal();
+    }
+    if (event.target === editModal) {
+        closeEditModal();
     }
 }
 
@@ -181,6 +193,93 @@ function deleteJob(index) {
             loadJobs();
         }
     }
+}
+
+// New functions for editing jobs
+function showEditJobModal(index) {
+    // Create modal if it doesn't exist
+    if (!document.getElementById('editJobModal')) {
+        createEditJobModal();
+    }
+    
+    const modal = document.getElementById('editJobModal');
+    const currentUser = localStorage.getItem('currentUser');
+    const users = getLocalStorageData('users');
+    
+    if (currentUser && users[currentUser]) {
+        const job = users[currentUser].jobs[index];
+        
+        // Populate form fields with current job data
+        document.getElementById('editCompanyName').value = job.companyName;
+        document.getElementById('editJobTitle').value = job.jobTitle;
+        document.getElementById('editApplicationDate').value = job.applicationDate;
+        document.getElementById('editJobStatus').value = job.jobStatus;
+        document.getElementById('editJobNotes').value = job.jobNotes;
+        
+        // Store the index for later use
+        document.getElementById('saveEditBtn').dataset.index = index;
+        
+        // Show the modal
+        toggleDisplay('editJobModal', 'block');
+    }
+}
+
+function createEditJobModal() {
+    const modalDiv = document.createElement('div');
+    modalDiv.id = 'editJobModal';
+    modalDiv.className = 'modal';
+    
+    modalDiv.innerHTML = `
+        <div class="modal-content">
+            <span class="close-modal" id="closeEditModalBtn">&times;</span>
+            <h3>Edit Job Application</h3>
+            <form id="editJobForm">
+                <input type="text" id="editCompanyName" placeholder="Company Name" aria-label="Company Name" required>
+                <input type="text" id="editJobTitle" placeholder="Job Title" aria-label="Job Title" required>
+                <input type="date" id="editApplicationDate" aria-label="Application Date" required>
+                <select id="editJobStatus" aria-label="Job Status">
+                    <option value="applied">Applied</option>
+                    <option value="interview">Interview</option>
+                    <option value="offer">Offer</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+                <textarea id="editJobNotes" placeholder="Notes" aria-label="Job Notes"></textarea>
+                <button type="button" id="saveEditBtn">Save Changes</button>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modalDiv);
+    
+    // Add event listeners for the new modal
+    document.getElementById('saveEditBtn').addEventListener('click', saveEditedJob);
+    document.getElementById('closeEditModalBtn').addEventListener('click', closeEditModal);
+}
+
+function saveEditedJob() {
+    const index = document.getElementById('saveEditBtn').dataset.index;
+    const currentUser = localStorage.getItem('currentUser');
+    const users = getLocalStorageData('users');
+    
+    if (currentUser && users[currentUser]) {
+        // Update the job with edited values
+        users[currentUser].jobs[index] = {
+            companyName: document.getElementById('editCompanyName').value,
+            jobTitle: document.getElementById('editJobTitle').value,
+            applicationDate: document.getElementById('editApplicationDate').value,
+            jobStatus: document.getElementById('editJobStatus').value,
+            jobNotes: document.getElementById('editJobNotes').value
+        };
+        
+        // Save to localStorage and refresh the job list
+        setLocalStorageData('users', users);
+        loadJobs();
+        closeEditModal();
+    }
+}
+
+function closeEditModal() {
+    toggleDisplay('editJobModal', 'none');
 }
 
 function logout() {

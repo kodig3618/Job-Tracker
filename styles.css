@@ -6,10 +6,10 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
     color: #333;
-    overflow: hidden;
+    padding: 20px 0;
 }
 
 .container {
@@ -89,6 +89,44 @@ button:active {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+.job-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.job-buttons button {
+    padding: 8px 16px;
+    font-size: 14px;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.edit-job-btn {
+    background-color: #28a745;
+}
+
+.edit-job-btn:hover {
+    background-color: #218838;
+}
+
+.update-status-btn {
+    background-color: #17a2b8;
+}
+
+.update-status-btn:hover {
+    background-color: #138496;
+}
+
+.delete-job-btn {
+    background-color: #dc3545;
+}
+
+.delete-job-btn:hover {
+    background-color: #c82333;
+}
+
 .modal {
     display: none;
     position: fixed;
@@ -114,18 +152,18 @@ button:active {
     animation: fadeIn 0.5s ease-in-out;
 }
 
-.close {
+.close-modal {
     color: #aaa;
     float: right;
     font-size: 28px;
     font-weight: bold;
+    cursor: pointer;
 }
 
-.close:hover,
-.close:focus {
+.close-modal:hover,
+.close-modal:focus {
     color: #000;
     text-decoration: none;
-    cursor: pointer;
 }
 
 @keyframes fadeIn {
@@ -153,5 +191,9 @@ button:active {
 
     .modal-content {
         width: 95%;
+    }
+    
+    .job-buttons {
+        flex-direction: column;
     }
 }
