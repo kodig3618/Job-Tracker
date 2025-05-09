@@ -1,26 +1,40 @@
 // Event Listeners
-document.getElementById('loginBtn').addEventListener('click', login);
-document.getElementById('submitRegBtn').addEventListener('click', register);
-document.getElementById('registerBtn').addEventListener('click', showRegisterForm);
-document.getElementById('backToLoginBtn').addEventListener('click', showLoginForm);
-document.getElementById('jobForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    addJob();
+document.addEventListener('DOMContentLoaded', function() {
+    // Login and registration listeners
+    document.getElementById('loginBtn').addEventListener('click', login);
+    document.getElementById('submitRegBtn').addEventListener('click', register);
+    document.getElementById('registerBtn').addEventListener('click', showRegisterForm);
+    document.getElementById('backToLoginBtn').addEventListener('click', showLoginForm);
+    document.getElementById('jobForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        addJob();
+    });
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+    document.getElementById('updateStatusBtn').addEventListener('click', updateJobStatus);
+    document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+    
+    // Initialize the app
+    if (localStorage.getItem('currentUser')) {
+        showJobTracker();
+    } else {
+        // Initialize users object if it doesn't exist
+        if (!localStorage.getItem('users')) {
+            setLocalStorageData('users', {});
+        }
+    }
 });
-document.getElementById('logoutBtn').addEventListener('click', logout);
-document.getElementById('updateStatusBtn').addEventListener('click', updateJobStatus);
-document.getElementById('closeModalBtn').addEventListener('click', closeModal);
-document.getElementById('saveEditBtn')?.addEventListener('click', saveEditedJob);
-document.getElementById('closeEditModalBtn')?.addEventListener('click', closeEditModal);
-window.addEventListener('click', closeModalOnOutsideClick);
 
 // Utility Functions
 function toggleDisplay(elementId, displayStyle) {
-    document.getElementById(elementId).style.display = displayStyle;
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.style.display = displayStyle;
+    }
 }
 
 function getLocalStorageData(key, defaultValue = {}) {
-    return JSON.parse(localStorage.getItem(key)) || defaultValue;
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : defaultValue;
 }
 
 function setLocalStorageData(key, data) {
@@ -88,6 +102,11 @@ function addJob() {
     const users = getLocalStorageData('users');
 
     if (currentUser && users[currentUser]) {
+        // Initialize jobs array if it doesn't exist
+        if (!Array.isArray(users[currentUser].jobs)) {
+            users[currentUser].jobs = [];
+        }
+        
         users[currentUser].jobs.push(job);
         setLocalStorageData('users', users);
         loadJobs();
@@ -107,13 +126,14 @@ function loadJobs() {
     const jobList = document.getElementById('jobList');
     jobList.innerHTML = '';
 
-    if (currentUser && users[currentUser]) {
+    if (currentUser && users[currentUser] && Array.isArray(users[currentUser].jobs)) {
         users[currentUser].jobs.forEach((job, index) => {
             const jobItem = document.createElement('div');
+            jobItem.className = 'job-item';
             jobItem.innerHTML = `
                 <h3>${job.jobTitle} at ${job.companyName}</h3>
                 <p>Application Date: ${job.applicationDate}</p>
-                <p>Status: ${job.jobStatus}</p>
+                <p>Status: <span class="status-${job.jobStatus}">${job.jobStatus}</span></p>
                 <p>Notes: ${job.jobNotes}</p>
                 <div class="job-buttons">
                     <button class="edit-job-btn" data-index="${index}">Edit</button>
@@ -123,18 +143,38 @@ function loadJobs() {
             `;
             jobList.appendChild(jobItem);
         });
-
-        // Attach event listeners to dynamically created buttons
-        document.querySelectorAll('.update-status-btn').forEach(button => {
-            button.addEventListener('click', () => showUpdateStatusModal(button.dataset.index));
-        });
-        document.querySelectorAll('.delete-job-btn').forEach(button => {
-            button.addEventListener('click', () => deleteJob(button.dataset.index));
-        });
-        document.querySelectorAll('.edit-job-btn').forEach(button => {
-            button.addEventListener('click', () => showEditJobModal(button.dataset.index));
-        });
     }
+    
+    // Set up button event listeners
+    setupJobButtonEvents();
+}
+
+function setupJobButtonEvents() {
+    // Edit buttons
+    document.querySelectorAll('.edit-job-btn').forEach(button => {
+        button.onclick = function() {
+            const index = this.getAttribute('data-index');
+            showEditJobModal(index);
+        };
+    });
+    
+    // Update status buttons
+    document.querySelectorAll('.update-status-btn').forEach(button => {
+        button.onclick = function() {
+            const index = this.getAttribute('data-index');
+            showUpdateStatusModal(index);
+        };
+    });
+    
+    // Delete buttons
+    document.querySelectorAll('.delete-job-btn').forEach(button => {
+        button.onclick = function() {
+            const index = this.getAttribute('data-index');
+            if (confirm('Are you sure you want to delete this job application?')) {
+                deleteJob(index);
+            }
+        };
+    });
 }
 
 function showUpdateStatusModal(index) {
@@ -177,21 +217,30 @@ function closeModalOnOutsideClick(event) {
     if (event.target === modal) {
         closeModal();
     }
-    if (event.target === editModal) {
+    if (editModal && event.target === editModal) {
         closeEditModal();
     }
 }
 
 function deleteJob(index) {
+    console.log("Deleting job at index:", index);
     const currentUser = localStorage.getItem('currentUser');
     const users = getLocalStorageData('users');
 
-    if (currentUser && users[currentUser]) {
-        if (confirm('Are you sure you want to delete this job application?')) {
-            users[currentUser].jobs.splice(index, 1);
+    if (currentUser && users[currentUser] && Array.isArray(users[currentUser].jobs)) {
+        // Convert index to number to ensure proper deletion
+        const numericIndex = parseInt(index, 10);
+        
+        // Ensure index is valid
+        if (numericIndex >= 0 && numericIndex < users[currentUser].jobs.length) {
+            users[currentUser].jobs.splice(numericIndex, 1);
             setLocalStorageData('users', users);
             loadJobs();
+        } else {
+            alert("Error: Could not delete job. Invalid job index.");
         }
+    } else {
+        alert("Error: Could not delete job. Data structure issue.");
     }
 }
 
@@ -221,6 +270,20 @@ function showEditJobModal(index) {
         
         // Show the modal
         toggleDisplay('editJobModal', 'block');
+        
+        // Add event listeners if they don't exist yet
+        const saveBtn = document.getElementById('saveEditBtn');
+        const closeBtn = document.getElementById('closeEditModalBtn');
+        
+        if (!saveBtn.hasEventListener) {
+            saveBtn.addEventListener('click', saveEditedJob);
+            saveBtn.hasEventListener = true;
+        }
+        
+        if (!closeBtn.hasEventListener) {
+            closeBtn.addEventListener('click', closeEditModal);
+            closeBtn.hasEventListener = true;
+        }
     }
 }
 
@@ -254,6 +317,10 @@ function createEditJobModal() {
     // Add event listeners for the new modal
     document.getElementById('saveEditBtn').addEventListener('click', saveEditedJob);
     document.getElementById('closeEditModalBtn').addEventListener('click', closeEditModal);
+    
+    // Mark that we've added event listeners
+    document.getElementById('saveEditBtn').hasEventListener = true;
+    document.getElementById('closeEditModalBtn').hasEventListener = true;
 }
 
 function saveEditedJob() {
@@ -288,12 +355,5 @@ function logout() {
     toggleDisplay('auth', 'block');
 }
 
-// Initialize
-if (localStorage.getItem('currentUser')) {
-    showJobTracker();
-} else {
-    // Initialize users object if it doesn't exist
-    if (!localStorage.getItem('users')) {
-        setLocalStorageData('users', {});
-    }
-}
+// Add window event for modal closing
+window.addEventListener('click', closeModalOnOutsideClick);
