@@ -1,24 +1,41 @@
-document.getElementById('loginButton').addEventListener('click', login);
-document.getElementById('registerButton').addEventListener('click', register);
-document.getElementById('showRegisterForm').addEventListener('click', showRegisterForm);
-document.getElementById('showLoginForm').addEventListener('click', showLoginForm);
-document.getElementById('addJobButton').addEventListener('click', addJob);
-document.getElementById('logoutButton').addEventListener('click', logout);
+// Event Listeners
+document.getElementById('loginBtn').addEventListener('click', login);
+document.getElementById('submitRegBtn').addEventListener('click', register);
+document.getElementById('registerBtn').addEventListener('click', showRegisterForm);
+document.getElementById('backToLoginBtn').addEventListener('click', showLoginForm);
+document.getElementById('addJobBtn').addEventListener('click', addJob);
+document.getElementById('loggoutBtn').addEventListener('click', logout);
+document.getElementById('updateStatusBtn').addEventListener('click', updateJobStatus);
+window.addEventListener('click', closeModalOnOutsideClick);
 
+// Utility Functions
+function toggleDisplay(elementId, displayStyle) {
+    document.getElementById(elementId).style.display = displayStyle;
+}
+
+function getLocalStorageData(key, defaultValue = {}) {
+    return JSON.parse(localStorage.getItem(key)) || defaultValue;
+}
+
+function setLocalStorageData(key, data) {
+    localStorage.setItem(key, JSON.stringify(data));
+}
+
+// Authentication Functions
 function showRegisterForm() {
-    document.getElementById('auth').style.display = 'none';
-    document.getElementById('resgister').style.display = 'block';
+    toggleDisplay('auth', 'none');
+    toggleDisplay('register', 'block');
 }
 
 function showLoginForm() {
-    document.getElementById('register').style.display = 'none';
-    document.getElementById('auth').style.display = 'block';
+    toggleDisplay('register', 'none');
+    toggleDisplay('auth', 'block');
 }
 
 function login() {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
-    const users = JSON.parse(localStorage.getItem('users')) || {};
+    const users = getLocalStorageData('users');
 
     if (users[username] && users[username].password === password) {
         localStorage.setItem('currentUser', username);
@@ -27,123 +44,135 @@ function login() {
         alert('Invalid username or password');
     }
 }
+
 function register() {
     const username = document.getElementById('regUsername').value;
     const password = document.getElementById('regPassword').value;
-    const users = JSON.parse(localStorage.getItem('users')) || {};
+    const users = getLocalStorageData('users');
 
     if (!users[username]) {
         users[username] = { password, jobs: [] };
-        localStorage.setItem('users', JSON.stringify(users));
+        setLocalStorageData('users', users);
         alert('Registration successful! You can now log in.');
         showLoginForm();
-} else {
+    } else {
         alert('Username already exists. Please choose a different one.');
     }
 }
 
+// Job Tracker Functions
 function showJobTracker() {
-    document.getElementById('auth').style.display = 'none';
-    document.getElementById('register').style.display = 'none';
-    document.getElementById('jobTracker').style.display = 'block';
+    toggleDisplay('auth', 'none');
+    toggleDisplay('register', 'none');
+    toggleDisplay('jobTracker', 'block');
     loadJobs();
 }
-function addJobs () {
-    const companyName = document.getElementById('companyName').value;
-    const jobTitle = document.getElementById('jobTitle').value;
-    const applicationDate = document.getElementById('applicationDate').value;
-    const jobStatus = document.getElementById('JobStatus').value;
-    const jobNotes = document.getElementById('jobNotes').value;
 
+function addJob() {
     const job = {
-        companyName,
-        jobTitle,
-        applicationDate,
-        jobStatus,
-        jobNotes
+        companyName: document.getElementById('companyName').value,
+        jobTitle: document.getElementById('jobTitle').value,
+        applicationDate: document.getElementById('applicationDate').value,
+        jobStatus: document.getElementById('jobStatus').value,
+        jobNotes: document.getElementById('jobNotes').value,
     };
+
     const currentUser = localStorage.getItem('currentUser');
-    const users = JSON.parse(localStorage.getItem('users'));
+    const users = getLocalStorageData('users');
 
-    users[currentUser].jobs.push(job);
-    localStorage.setItem('users', JSON.stringify(users));
-    loadJobs();
+    if (currentUser && users[currentUser]) {
+        users[currentUser].jobs.push(job);
+        setLocalStorageData('users', users);
+        loadJobs();
+        clearJobForm();
+    }
+}
 
-    //clear input fields
-    document.getElementById('companyName').value = '';
-    document.getElementById('jobTitle').value = '';
-    document.getElementById('applicationDate').value = '';
-    document.getElementById('jobStatus').value = '';
-    document.getElementById('jobNotes').value = '';
+function clearJobForm() {
+    ['companyName', 'jobTitle', 'applicationDate', 'jobStatus', 'jobNotes'].forEach(id => {
+        document.getElementById(id).value = '';
+    });
 }
 
 function loadJobs() {
     const currentUser = localStorage.getItem('currentUser');
-    const users = JSON.parse(localStorage.getItem('users'));
+    const users = getLocalStorageData('users');
     const jobList = document.getElementById('jobList');
     jobList.innerHTML = '';
 
-    users[currentUser].jobs.forEach((job, index) => {
-        const jobItem = document.createElement('div');
-        jobItem.innerHTML = `
-            <h3>${job.jobTitle} at ${job.companyName}</h3>
-            <p>Application Date: ${job.applicationDate}</p>
-            <p>Status: ${job.jobStatus}</p>
-            <p>Notes: ${job.jobNotes}</p>
-            <button onclick="showUpdateStatusModal(${index})">Update Status</button>
-            <button onclick="deleteJob(${index})">Delete</button>
-        `;
-        jobList.appendChild(jobItem);
-    });
+    if (currentUser && users[currentUser]) {
+        users[currentUser].jobs.forEach((job, index) => {
+            const jobItem = document.createElement('div');
+            jobItem.innerHTML = `
+                <h3>${job.jobTitle} at ${job.companyName}</h3>
+                <p>Application Date: ${job.applicationDate}</p>
+                <p>Status: ${job.jobStatus}</p>
+                <p>Notes: ${job.jobNotes}</p>
+                <button class="update-status-btn" data-index="${index}">Update Status</button>
+                <button class="delete-job-btn" data-index="${index}">Delete</button>
+            `;
+            jobList.appendChild(jobItem);
+        });
+
+        // Attach event listeners to dynamically created buttons
+        document.querySelectorAll('.update-status-btn').forEach(button => {
+            button.addEventListener('click', () => showUpdateStatusModal(button.dataset.index));
+        });
+        document.querySelectorAll('.delete-job-btn').forEach(button => {
+            button.addEventListener('click', () => deleteJob(button.dataset.index));
+        });
+    }
 }
 
 function showUpdateStatusModal(index) {
-    const modal = document.getElementById('updateStatusModal');
-    modal.style.display = 'block';
-    document.getElementById('updateStatusButton').onclick = () => updateJobStatus(index);
+    toggleDisplay('updateStatusModal', 'block');
+    document.getElementById('updateStatusBtn').dataset.index = index;
 }
 
-function updateJobStatus(index) {
+function updateJobStatus() {
+    const index = document.getElementById('updateStatusBtn').dataset.index;
     const newStatus = document.getElementById('newStatus').value;
     const currentUser = localStorage.getItem('currentUser');
-    const users = JSON.parse(localStorage.getItem('users'));
+    const users = getLocalStorageData('users');
 
-    if (newStatus) {
+    if (newStatus && currentUser && users[currentUser]) {
         users[currentUser].jobs[index].jobStatus = newStatus;
-        localStorage.setItem('users', JSON.stringify(users));
+        setLocalStorageData('users', users);
         loadJobs();
         closeModal();
     }
 }
 
 function closeModal() {
+    toggleDisplay('updateStatusModal', 'none');
+}
+
+function closeModalOnOutsideClick(event) {
     const modal = document.getElementById('updateStatusModal');
-    modal.style.display = 'none';
+    if (event.target === modal) {
+        closeModal();
+    }
 }
 
 function deleteJob(index) {
     const currentUser = localStorage.getItem('currentUser');
-    const users = JSON.parse(localStorage.getItem('users'));
+    const users = getLocalStorageData('users');
 
-    users[currentUser].jobs.splice(index, 1);
-    localStorage.setItem('users', JSON.stringify(users));
-    loadJobs();
+    if (currentUser && users[currentUser]) {
+        users[currentUser].jobs.splice(index, 1);
+        setLocalStorageData('users', users);
+        loadJobs();
+    }
 }
 
-function logout(){
+function logout() {
     localStorage.removeItem('currentUser');
-    document.getElementById('jobTracker').style.display = 'none';
-    document.getElementById('auth').style.display = 'block';
+    toggleDisplay('jobTracker', 'none');
+    toggleDisplay('auth', 'block');
 }
 
+// Initialize
 if (localStorage.getItem('currentUser')) {
     showJobTracker();
-}
-
-window.onclick = function(event) {
-    const modal = document.getElementById('updateStatusModal');
-    if (event.target == modal) {
-        modal.style.display = 'none';
-    }
 }
 

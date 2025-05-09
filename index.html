@@ -5,55 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Job Tracker App</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
     <div class="container">
         <h1>Job Tracker Application</h1>
-            <div id="auth">
-                <h2>Login</h2>
-                <input type="text" id="username" placeholder="Username">
-                <input type="password" id="password" placeholder="Password">
-                <button id="loginBtn">Login</button>
-                <p>Don't have an account?
-                <button id="registerBtn">Register</button></p>
-            </div>
-            <div id="register" style="display: none;">
-                <h2>Register</h2>
-                <input type="text" id="regUsername" placeholder="Username">
-                <input type="password" id="regPassword" placeholder="Password">
-                <button id="submitRegBtn">Register</button>
-                <p>Already have an account?
-                <button id="backToLoginBtn">Back to Login</button></p>
-            </div>
-            <div id="jobTracker" style="display: none;">
-                <h2>Job Tracker, <span id="userNameDisplay"></span></h2>
-                <h3>Add a Job Application</h3>
-                <input type="text" id="companyName" placeholder="Company Name">
-                <input type="text" id="jobTitle" placeholder="Job Title">
-                <input type="date" id="applicationDate" placeholder="Application Date">
-                <select id="jobStatus">
+        <div id="auth">
+            <h2>Login</h2>
+            <input type="text" id="username" placeholder="Username" aria-label="Username">
+            <input type="password" id="password" placeholder="Password" aria-label="Password">
+            <button id="loginBtn">Login</button>
+            <p>Don't have an account? <button id="registerBtn">Register</button></p>
+        </div>
+        <div id="register" style="display: none;">
+            <h2>Register</h2>
+            <input type="text" id="regUsername" placeholder="Username" aria-label="Register Username">
+            <input type="password" id="regPassword" placeholder="Password" aria-label="Register Password">
+            <button id="submitRegBtn">Register</button>
+            <p>Already have an account? <button id="backToLoginBtn">Back to Login</button></p>
+        </div>
+        <div id="jobTracker" style="display: none;">
+            <h2>Job Tracker, <span id="userNameDisplay"></span></h2>
+            <h3>Add a Job Application</h3>
+            <form id="jobForm">
+                <input type="text" id="companyName" placeholder="Company Name" aria-label="Company Name" required>
+                <input type="text" id="jobTitle" placeholder="Job Title" aria-label="Job Title" required>
+                <input type="date" id="applicationDate" aria-label="Application Date" required>
+                <select id="jobStatus" aria-label="Job Status">
                     <option value="applied">Applied</option>
                     <option value="interview">Interview</option>
                     <option value="offer">Offer</option>
                     <option value="rejected">Rejected</option>
                 </select>
-                <textarea id="jobNotes" placeholder="Notes"></textarea>
-                <button id="addJobBtn">Add Job</button>
-                <div id="jobList">
-                <button id="loggoutBtn">Logout</button>
-    </div>
-    <div id="updateStatus" class="modal">
-        <div class="modal-content">
-            <select id="newStatus">
-                <option value="applied">Applied</option>
-                <option value="interview">Interview</option>
-                <option value="offer">Offer</option>
-                <option value="rejected">Rejected</option>
-            </select>
-            <button id="updateStatusBtn">Update Status</button>
+                <textarea id="jobNotes" placeholder="Notes" aria-label="Job Notes"></textarea>
+                <button type="submit" id="addJobBtn">Add Job</button>
+            </form>
+            <div id="jobList"></div>
+            <button id="logoutBtn">Logout</button>
+        </div>
+        <div id="updateStatus" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close-modal" id="closeModalBtn">&times;</span>
+                <h3>Update Job Status</h3>
+                <select id="newStatus" aria-label="New Job Status">
+                    <option value="applied">Applied</option>
+                    <option value="interview">Interview</option>
+                    <option value="offer">Offer</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+                <button id="updateStatusBtn">Update Status</button>
             </div>
         </div>
+    </div>
 </body>
-
 </html>
