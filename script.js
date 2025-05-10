@@ -13,6 +13,16 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('updateStatusBtn').addEventListener('click', updateJobStatus);
     document.getElementById('closeModalBtn').addEventListener('click', closeModal);
     
+    // Add event listeners for filter and sort only if they exist
+    // (These won't be available on the login/register screens but will be created when jobTracker is shown)
+    const filterElement = document.getElementById('filterStatus');
+    const sortElement = document.getElementById('sortCriteria');
+    const searchElement = document.getElementById('searchJobs');
+    
+    if (filterElement) filterElement.addEventListener('change', applyFilterAndSort);
+    if (sortElement) sortElement.addEventListener('change', applyFilterAndSort);
+    if (searchElement) searchElement.addEventListener('input', applyFilterAndSort);
+    
     // Initialize the app
     if (localStorage.getItem('currentUser')) {
         showJobTracker();
@@ -23,6 +33,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// Global variables for filter and sort
+let currentFilter = 'all';
+let currentSort = 'newest';
 
 // Utility Functions
 function toggleDisplay(elementId, displayStyle) {
@@ -80,13 +94,50 @@ function register() {
     }
 }
 
+function logout() {
+    localStorage.removeItem('currentUser');
+    toggleDisplay('jobTracker', 'none');
+    toggleDisplay('auth', 'block');
+}
+
 // Job Tracker Functions
 function showJobTracker() {
-    document.getElementById('userNameDisplay').textContent = localStorage.getItem('currentUser');
-    toggleDisplay('auth', 'none');
-    toggleDisplay('register', 'none');
-    toggleDisplay('jobTracker', 'block');
-    loadJobs();
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+        document.getElementById('userNameDisplay').textContent = currentUser;
+        toggleDisplay('auth', 'none');
+        toggleDisplay('register', 'none');
+        toggleDisplay('jobTracker', 'block');
+        
+        // Add event listeners for filter/sort elements (which now exist in the DOM)
+        const filterElement = document.getElementById('filterStatus');
+        const sortElement = document.getElementById('sortCriteria');
+        const searchElement = document.getElementById('searchJobs');
+        
+        if (filterElement && !filterElement.hasEventListener) {
+            filterElement.addEventListener('change', applyFilterAndSort);
+            filterElement.hasEventListener = true;
+        }
+        
+        if (sortElement && !sortElement.hasEventListener) {
+            sortElement.addEventListener('change', applyFilterAndSort);
+            sortElement.hasEventListener = true;
+        }
+        
+        if (searchElement && !searchElement.hasEventListener) {
+            searchElement.addEventListener('input', applyFilterAndSort);
+            searchElement.hasEventListener = true;
+        }
+        
+        // Reset filter and sort to defaults
+        if (filterElement) filterElement.value = 'all';
+        if (sortElement) sortElement.value = 'newest';
+        if (searchElement) searchElement.value = '';
+        
+        // Update job stats and load jobs
+        updateJobStats();
+        loadJobs();
+    }
 }
 
 function addJob() {
@@ -109,7 +160,8 @@ function addJob() {
         
         users[currentUser].jobs.push(job);
         setLocalStorageData('users', users);
-        loadJobs();
+        applyFilterAndSort(); // Use this instead of loadJobs()
+        updateJobStats();
         clearJobForm();
     }
 }
@@ -124,29 +176,119 @@ function loadJobs() {
     const currentUser = localStorage.getItem('currentUser');
     const users = getLocalStorageData('users');
     const jobList = document.getElementById('jobList');
+    
+    if (jobList) {
+        jobList.innerHTML = '';
+
+        if (currentUser && users[currentUser] && Array.isArray(users[currentUser].jobs)) {
+            // Apply filters and sorting, then display the jobs
+            applyFilterAndSort();
+        }
+    }
+}
+
+// Filter, Sort, and Display Functions
+function applyFilterAndSort() {
+    const currentUser = localStorage.getItem('currentUser');
+    const users = getLocalStorageData('users');
+    const jobList = document.getElementById('jobList');
+    
+    if (!jobList) return; // Exit if jobList doesn't exist
+    
     jobList.innerHTML = '';
 
     if (currentUser && users[currentUser] && Array.isArray(users[currentUser].jobs)) {
-        users[currentUser].jobs.forEach((job, index) => {
-            const jobItem = document.createElement('div');
-            jobItem.className = 'job-item';
-            jobItem.innerHTML = `
-                <h3>${job.jobTitle} at ${job.companyName}</h3>
-                <p>Application Date: ${job.applicationDate}</p>
-                <p>Status: <span class="status-${job.jobStatus}">${job.jobStatus}</span></p>
-                <p>Notes: ${job.jobNotes}</p>
-                <div class="job-buttons">
-                    <button class="edit-job-btn" data-index="${index}">Edit</button>
-                    <button class="update-status-btn" data-index="${index}">Update Status</button>
-                    <button class="delete-job-btn" data-index="${index}">Delete</button>
-                </div>
-            `;
-            jobList.appendChild(jobItem);
-        });
+        // Check if filter/sort elements exist before trying to access their values
+        const filterElement = document.getElementById('filterStatus');
+        const sortElement = document.getElementById('sortCriteria');
+        const searchElement = document.getElementById('searchJobs');
+        
+        // Get filter and sort values if elements exist
+        const filterValue = filterElement ? filterElement.value : 'all';
+        const sortValue = sortElement ? sortElement.value : 'newest';
+        const searchValue = searchElement ? searchElement.value.toLowerCase() : '';
+        
+        // Store current filter and sort values
+        currentFilter = filterValue;
+        currentSort = sortValue;
+        
+        // Create a copy of the jobs array to avoid modifying the original
+        let filteredJobs = [...users[currentUser].jobs];
+        
+        // Apply search filter (across company name and job title)
+        if (searchValue) {
+            filteredJobs = filteredJobs.filter(job => 
+                job.companyName.toLowerCase().includes(searchValue) || 
+                job.jobTitle.toLowerCase().includes(searchValue)
+            );
+        }
+        
+        // Apply status filter
+        if (filterValue !== 'all') {
+            filteredJobs = filteredJobs.filter(job => job.jobStatus === filterValue);
+        }
+        
+        // Apply sorting
+        switch (sortValue) {
+            case 'newest':
+                filteredJobs.sort((a, b) => new Date(b.applicationDate) - new Date(a.applicationDate));
+                break;
+            case 'oldest':
+                filteredJobs.sort((a, b) => new Date(a.applicationDate) - new Date(b.applicationDate));
+                break;
+            case 'companyAZ':
+                filteredJobs.sort((a, b) => a.companyName.localeCompare(b.companyName));
+                break;
+            case 'companyZA':
+                filteredJobs.sort((a, b) => b.companyName.localeCompare(a.companyName));
+                break;
+            case 'titleAZ':
+                filteredJobs.sort((a, b) => a.jobTitle.localeCompare(b.jobTitle));
+                break;
+            case 'titleZA':
+                filteredJobs.sort((a, b) => b.jobTitle.localeCompare(a.jobTitle));
+                break;
+        }
+        
+        // Check if we have any results
+        if (filteredJobs.length === 0) {
+            jobList.innerHTML = '<div class="no-results">No job applications match your filters.</div>';
+        } else {
+            // Display the filtered and sorted jobs
+            filteredJobs.forEach((job, index) => {
+                // Get the original index of this job in the full array
+                const originalIndex = users[currentUser].jobs.findIndex(j => 
+                    j.companyName === job.companyName && 
+                    j.jobTitle === job.jobTitle && 
+                    j.applicationDate === job.applicationDate
+                );
+                
+                const jobItem = document.createElement('div');
+                jobItem.className = 'job-item';
+                jobItem.innerHTML = `
+                    <h3>${job.jobTitle} at ${job.companyName}</h3>
+                    <p>Application Date: ${job.applicationDate}</p>
+                    <p>Status: <span class="status-${job.jobStatus}">${job.jobStatus}</span></p>
+                    <p>Notes: ${job.jobNotes}</p>
+                    <div class="job-buttons">
+                        <button class="edit-job-btn" data-index="${originalIndex}">Edit</button>
+                        <button class="update-status-btn" data-index="${originalIndex}">Update Status</button>
+                        <button class="delete-job-btn" data-index="${originalIndex}">Delete</button>
+                    </div>
+                `;
+                jobList.appendChild(jobItem);
+            });
+        }
+        
+        // Update the count of displayed jobs
+        const jobCountElement = document.getElementById('jobCount');
+        if (jobCountElement) {
+            jobCountElement.textContent = filteredJobs.length;
+        }
+        
+        // Set up button event listeners
+        setupJobButtonEvents();
     }
-    
-    // Set up button event listeners
-    setupJobButtonEvents();
 }
 
 function setupJobButtonEvents() {
@@ -202,7 +344,8 @@ function updateJobStatus() {
     if (newStatus && currentUser && users[currentUser]) {
         users[currentUser].jobs[index].jobStatus = newStatus;
         setLocalStorageData('users', users);
-        loadJobs();
+        applyFilterAndSort(); // Use this instead of loadJobs()
+        updateJobStats();
         closeModal();
     }
 }
@@ -235,7 +378,8 @@ function deleteJob(index) {
         if (numericIndex >= 0 && numericIndex < users[currentUser].jobs.length) {
             users[currentUser].jobs.splice(numericIndex, 1);
             setLocalStorageData('users', users);
-            loadJobs();
+            applyFilterAndSort(); // Use this instead of loadJobs()
+            updateJobStats();
         } else {
             alert("Error: Could not delete job. Invalid job index.");
         }
@@ -244,7 +388,7 @@ function deleteJob(index) {
     }
 }
 
-// New functions for editing jobs
+// Job Edit Modal Functions
 function showEditJobModal(index) {
     // Create modal if it doesn't exist
     if (!document.getElementById('editJobModal')) {
@@ -340,7 +484,8 @@ function saveEditedJob() {
         
         // Save to localStorage and refresh the job list
         setLocalStorageData('users', users);
-        loadJobs();
+        applyFilterAndSort(); // Use this instead of loadJobs()
+        updateJobStats();
         closeEditModal();
     }
 }
@@ -349,10 +494,40 @@ function closeEditModal() {
     toggleDisplay('editJobModal', 'none');
 }
 
-function logout() {
-    localStorage.removeItem('currentUser');
-    toggleDisplay('jobTracker', 'none');
-    toggleDisplay('auth', 'block');
+// Job Stats Function
+function updateJobStats() {
+    const currentUser = localStorage.getItem('currentUser');
+    const users = getLocalStorageData('users');
+    const statsContainer = document.getElementById('jobStats');
+    
+    if (!statsContainer) return; // Exit if stats container doesn't exist
+    
+    if (currentUser && users[currentUser] && Array.isArray(users[currentUser].jobs)) {
+        const totalJobs = users[currentUser].jobs.length;
+        
+        // Count jobs by status
+        const statusCounts = {
+            applied: 0,
+            interview: 0,
+            offer: 0,
+            rejected: 0
+        };
+        
+        users[currentUser].jobs.forEach(job => {
+            if (statusCounts.hasOwnProperty(job.jobStatus)) {
+                statusCounts[job.jobStatus]++;
+            }
+        });
+        
+        // Update the stats display
+        statsContainer.innerHTML = `
+            <div class="stat-item"><span>Total:</span> ${totalJobs}</div>
+            <div class="stat-item"><span>Applied:</span> ${statusCounts.applied}</div>
+            <div class="stat-item"><span>Interview:</span> ${statusCounts.interview}</div>
+            <div class="stat-item"><span>Offer:</span> ${statusCounts.offer}</div>
+            <div class="stat-item"><span>Rejected:</span> ${statusCounts.rejected}</div>
+        `;
+    }
 }
 
 // Add window event for modal closing

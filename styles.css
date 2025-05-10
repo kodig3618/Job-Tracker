@@ -74,6 +74,7 @@ button:active {
     transform: scale(0.95);
 }
 
+/* Job List Styles */
 #jobList div {
     border: 1px solid #ccc;
     padding: 15px;
@@ -127,6 +128,7 @@ button:active {
     background-color: #c82333;
 }
 
+/* Modal Styles */
 .modal {
     display: none;
     position: fixed;
@@ -160,10 +162,128 @@ button:active {
     cursor: pointer;
 }
 
-.close-modal:hover,
-.close-modal:focus {
+.close-modal:hover, .close-modal:focus {
     color: #000;
     text-decoration: none;
+}
+
+/* NEW STYLES FOR FILTER AND SORT */
+
+/* Stats Container */
+.stats-container {
+    display: flex;
+    justify-content: space-around;
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #f0f8ff;
+    border-radius: 8px;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    margin: 5px 10px;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 20px;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-item span {
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+/* Filter and Sort Container */
+.filter-sort-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    align-items: flex-start; /* Adjust alignment to prevent overlap */
+}
+
+.search-container {
+    flex: 1 1 300px;
+    min-width: 200px;
+    max-width: 300px;
+}
+
+.search-container input {
+    margin: 0;
+    padding: 10px 15px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    background-color: white;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 10px center;
+    background-size: 16px;
+    padding-left: 35px;
+}
+.filter-container, .sort-container {
+    flex: 1 1 200px;
+    min-width: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.filter-container label, .sort-container label {
+    margin-bottom: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #555;
+}
+
+.filter-container select, .sort-container select {
+    width: 100%;
+    margin: 0;
+    padding: 10px;
+}
+
+/* Results info */
+.results-info {
+    text-align: left;
+    margin: 15px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+#jobCount {
+    font-weight: bold;
+    color: #007BFF;
+}
+
+/* Status color indicators */
+.status-applied {
+    color: #17a2b8;
+    font-weight: bold;
+}
+
+.status-interview {
+    color: #fd7e14;
+    font-weight: bold;
+}
+
+.status-offer {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.status-rejected {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.no-results {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
 }
 
 @keyframes fadeIn {
@@ -175,25 +295,40 @@ button:active {
     .container {
         padding: 20px;
     }
-
+    
     h1 {
         font-size: 1.8rem;
     }
-
+    
     h2 {
         font-size: 1.2rem;
     }
-
+    
     button {
         font-size: 14px;
         padding: 10px 16px;
     }
-
+    
     .modal-content {
         width: 95%;
     }
-    
+        
     .job-buttons {
         flex-direction: column;
+    }
+    
+    .filter-container, .sort-container {
+        flex: 1 1 100%;
+    }
+    
+    .stats-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .stat-item {
+        width: 80%;
+        text-align: center;
+        margin: 5px 0;
     }
 }

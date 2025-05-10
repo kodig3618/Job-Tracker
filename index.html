@@ -26,6 +26,12 @@
         </div>
         <div id="jobTracker" style="display: none;">
             <h2>Job Tracker, <span id="userNameDisplay"></span></h2>
+            
+            <!-- Job Statistics Section -->
+            <div id="jobStats" class="stats-container">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            
             <h3>Add a Job Application</h3>
             <form id="jobForm">
                 <input type="text" id="companyName" placeholder="Company Name" aria-label="Company Name" required>
@@ -40,6 +46,40 @@
                 <textarea id="jobNotes" placeholder="Notes" aria-label="Job Notes"></textarea>
                 <button type="submit" id="addJobBtn">Add Job</button>
             </form>
+            
+            <!-- Filter and Sort Section -->
+            <div class="filter-sort-container">
+                <div class="search-container">
+                    <input type="text" id="searchJobs" placeholder="Search jobs..." aria-label="Search Jobs">
+                </div>
+                <div class="filter-container">
+                    <label for="filterStatus">Filter by Status:</label>
+                    <select id="filterStatus" aria-label="Filter by Status">
+                        <option value="all">All Statuses</option>
+                        <option value="applied">Applied</option>
+                        <option value="interview">Interview</option>
+                        <option value="offer">Offer</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <div class="sort-container">
+                    <label for="sortCriteria">Sort by:</label>
+                    <select id="sortCriteria" aria-label="Sort Criteria">
+                        <option value="newest">Date (Newest First)</option>
+                        <option value="oldest">Date (Oldest First)</option>
+                        <option value="companyAZ">Company (A-Z)</option>
+                        <option value="companyZA">Company (Z-A)</option>
+                        <option value="titleAZ">Job Title (A-Z)</option>
+                        <option value="titleZA">Job Title (Z-A)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Results count -->
+            <div class="results-info">
+                Showing <span id="jobCount">0</span> job applications
+            </div>
+            
             <div id="jobList"></div>
             <button id="logoutBtn">Logout</button>
         </div>
